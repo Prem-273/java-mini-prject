@@ -1,53 +1,48 @@
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
-import java.util.Scanner;
+import java.time.format.DateTimeParseException;
 
-public class AgeCalculator1 {
+public class AgeCalculator {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Choose an option:");
-        System.out.println("1. Calculate age from date of birth");
-        System.out.println("2. Calculate date of birth from age in years");
-        int choice = scanner.nextInt();
-        scanner.nextLine();  // Consume newline
-        if (choice == 1) {
-            calculateAge(scanner);
-        } else if (choice == 2) {
-            calculateDOBFromAge(scanner);
-        } else {
-            System.out.println("Invalid option.");
+        if (args.length == 0) {
+            System.out.println("Please provide your date of birth as a command-line argument in the format dd-MM-yyyy.");
+            return;
         }
-      
-        scanner.close();
-    }
-    // Method to calculate age from date of birth
-    public static void calculateAge(Scanner scanner) {
-        System.out.print("Enter your date of birth (dd-MM-yyyy): ");
-        String dobInput = scanner.nextLine();
 
+        String dobInput = args[0];
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+        // Check for February 29 on a non-leap year before parsing
+        if (dobInput.matches("\\d{2}-02-\\d{4}")) { // Matches dates in February
+            String[] parts = dobInput.split("-");
+            int day = Integer.parseInt(parts[0]);
+            int year = Integer.parseInt(parts[2]);
+
+            // If day is 29 and it's not a leap year
+            if (day == 29 && !LocalDate.of(year, 1, 1).isLeapYear()) {
+                System.out.println("Invalid date: " + dobInput + " is not in a leap year.");
+                return;
+            }
+        }
+
         try {
             LocalDate dob = LocalDate.parse(dobInput, formatter);
             LocalDate currentDate = LocalDate.now();
+            
+            // Check if date of birth is in the future
             if (dob.isAfter(currentDate)) {
                 System.out.println("The date of birth cannot be in the future.");
-            } else {
-                Period age = Period.between(dob, currentDate);
-                System.out.printf("Your age is %d years, %d months, and %d days.%n", 
-                                  age.getYears(), age.getMonths(), age.getDays());
+                return;
             }
-        } catch (Exception e) {
-            System.out.println("Invalid date format. Please enter the date in the format dd-MM-yyyy.");
+
+            // Calculate the age
+            Period age = Period.between(dob, currentDate);
+            System.out.printf("Your age is %d years, %d months, and %d days.%n", 
+                              age.getYears(), age.getMonths(), age.getDays());
+
+        } catch (DateTimeParseException e) {
+            System.out.println("Invalid date format or non-existent date. Please enter the date in the format dd-MM-yyyy.");
         }
-    }
-    // Method to calculate date of birth from age in years
-    public static void calculateDOBFromAge(Scanner scanner) {
-        System.out.print("Enter your age in years: ");
-        int years = scanner.nextInt();
-        LocalDate currentDate = LocalDate.now();
-        LocalDate dob = currentDate.minusYears(years);
-        System.out.println("Your approximate date of birth could be around: " 
-                           + dob.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
     }
 }
